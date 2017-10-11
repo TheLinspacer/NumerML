@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Numerai datasets (kinda big)
+data/
+
 # C extensions
 *.so
 

@@ -5,10 +5,9 @@
 import os
 import os.path as op
 import sys
-import json
+# import json
 import pandas as pd
 import numpy as np
-import sklearn as sk
 from datetime import datetime
 from numerapi.numerapi import NumerAPI
 
@@ -17,10 +16,9 @@ def homepath():
     return op.abspath(op.dirname(op.dirname(__file__)))
 
 def dirmake(pth):
-    if op.isdir(pth):
-        os.mkdir(pth)
-    return
-
+    if not op.exists(pth):
+        os.makedirs(pth)
+    
 class Parser(object):
     def __init__(self, hmpath=homepath()):
 
@@ -37,7 +35,6 @@ class Parser(object):
         self.traindata = op.join(self.datapath, "numerai_training_data.csv")
         self.predata = op.join(self.datapath, "numerai_tournament_data.csv")
 
-# 
     def getData(self):
         dataT = pd.read_csv(self.traindata, header=0)
         dataP = pd.read_csv(self.predata, header=0)
@@ -46,17 +43,13 @@ class Parser(object):
         self.targ = ["target"]
         self.trainF = dataT[self.feats]
         self.trainT = dataT[self.targ]
-        self.trainT = self.trainT[self.targ].astype(np.int32)
+        self.trainT = self.trainT[self.targ].astype(np.int32) #Remove non int items
         self.dataV = dataP[dataP["data_type"].isin(["validation"])]
         self.dataV = self.dataV.set_index(self.typ)
         self.validF = self.dataV[self.feats]
         self.validT = self.dataV[self.targ]
         dataP = dataP.set_index(self.typ)
-        self.predF = dataP[self.feats]        
-
-    def compareValid(self, predz):
-        self.vp = np.sum(np.abs(self.validT.values-predz.values))/len(self.validT)
-        print("{:.2f} percent of the predictions are False.".format(self.vp*100.0)) 
+        self.predF = dataP[self.feats]         
 
     def writeOut(self, predz):
         self.idout[self.outvar] = predz
@@ -69,6 +62,17 @@ def getCSV(hmpath=homepath()):
     napi = NumerAPI(verbosity="info")
     ps = Parser(hmpath)
     napi.download_current_dataset(dest_path=ps.datapath, unzip=True)
+    r, d, ff = os.walk(ps.datapath)
+    dp = op.join(r, d[0])
+    for fn in os.listdir(dp):
+        if fn.endswith('.csv'):
+            os.rename(op.join(dp, fn), op.join(r, fn))
+
+    os.removedirs(dp)
+    fff = [f for f in ff if f.endswith(".zip")]
+    for fb in fff:
+        os.remove(fb)
+        
     return ps
 
 
